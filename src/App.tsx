@@ -6,6 +6,8 @@ import styled from 'styled-components';
 import githubLogo from './assets/svg/iconmonstr-github.svg';
 import axios from 'axios';
 import queryString from 'query-string';
+import StarsIcon from './assets/svg/stars-icon';
+import ForkIcon from './assets/svg/git-fork';
 
 const GITHUB_API_BASE_URL = 'https://api.github.com';
 
@@ -13,11 +15,8 @@ type RepositoryResponse = {
   id: number;
   forks: number;
   stars: number;
-  name: string;
+  full_name: string;
   description: string;
-  owner: {
-    login: string;
-  };
 };
 
 const initialSearchCriteria = {
@@ -75,17 +74,25 @@ const App = () => {
         onChange={handleChangeInput}
         value={searchCriteria.q}
       />
-      {repositories.map((repository) => (
-        <div key={repository.id}>
-          <ul>
-            <li>{repository.name}</li>
-            <li>{repository.owner.login}</li>
-            <li>{repository.forks}</li>
-            <li>{repository.stars}</li>
-            <li>{repository.description}</li>
-          </ul>
-        </div>
-      ))}
+      <ListingContainer>
+        {repositories.map((repository) => (
+          <RepoCard key={repository.id}>
+            <RepoName>{repository.full_name}</RepoName>
+            <RepoDescription>{repository.description}</RepoDescription>
+            <IconsWrapper>
+              <NumbersWithIconsWrapper>
+                <StarsIcon />
+                <NumbersText>
+                  {repository.stars ? repository.stars : 0}
+                </NumbersText>
+              </NumbersWithIconsWrapper>
+              <NumbersWithIconsWrapper>
+                <ForkIcon /> <NumbersText>{repository.forks}</NumbersText>
+              </NumbersWithIconsWrapper>
+            </IconsWrapper>
+          </RepoCard>
+        ))}
+      </ListingContainer>
     </Container>
   );
 };
@@ -98,6 +105,7 @@ export const Container = styled.div`
   margin-top: 30px;
   width: 90%;
   align-items: center;
+  margin: 50px auto;
 `;
 
 export const Input = styled.input`
@@ -111,4 +119,60 @@ export const Input = styled.input`
   background-position-x: 10px;
   margin-top: 30px;
   text-align: start;
+`;
+
+export const ListingContainer = styled.div`
+  width: 100%;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  padding: 10px;
+  margin-top: 20px;
+`;
+
+export const RepoCard = styled.div`
+  width: 400px;
+  display: flex;
+  flex-direction: column;
+  padding: 10px;
+  background-color: white;
+  box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
+  transition: 0.3s;
+  margin-bottom: 20px;
+  position: relative;
+  min-height: 150px;
+`;
+
+export const RepoName = styled.h3`
+  color: black;
+  font-weight: bold;
+  margin: 0px;
+`;
+
+export const RepoDescription = styled.p`
+  color: rgba(52, 66, 71, 0.38);
+  font-size: 14px;
+`;
+
+export const IconsWrapper = styled.div`
+  display: flex;
+  flex-direction: row;
+  justify-content: space-around;
+  width: 30%;
+  position: absolute;
+  bottom: 16px;
+`;
+
+export const NumbersText = styled.h4`
+  text-align: center;
+  color: black;
+  font-weight: bold;
+  margin: 0px;
+`;
+
+export const NumbersWithIconsWrapper = styled.div`
+  display: flex;
+  flex-direction: row;
+  align-items: end;
 `;
