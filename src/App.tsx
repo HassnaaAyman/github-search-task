@@ -20,8 +20,8 @@ type RepositoryResponse = {
 };
 
 const initialSearchCriteria = {
-  order: 'asc',
-  sort: 'stars',
+  order: '',
+  sort: '',
   q: '',
 };
 
@@ -31,17 +31,27 @@ const App = () => {
     ...initialSearchCriteria,
   });
 
+  const [changingQuery, setChangingQuery] = useState(true);
+
   const handleChangeInput = useCallback(
     (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
       setSearchCriteria((prevState) => ({
         ...prevState,
         [e.target.name]: e.target.value,
       }));
+      if (e.target.name === 'q') {
+        setChangingQuery(true);
+      } else {
+        setChangingQuery(false);
+      }
     },
     [setSearchCriteria],
   );
 
   const handleChangeCriteria = useCallback(() => {
+    if (!searchCriteria.q) {
+      return;
+    }
     const url = queryString.stringifyUrl({
       query: {
         q: searchCriteria.q,
@@ -61,7 +71,17 @@ const App = () => {
       });
   }, [searchCriteria]);
 
-  console.log({ repositories });
+  useEffect(() => {
+    if (!changingQuery) {
+      handleChangeCriteria();
+    }
+  }, [changingQuery, handleChangeCriteria]);
+
+  const handleResetClick = useCallback(() => {
+    setSearchCriteria({ ...initialSearchCriteria });
+  }, []);
+
+  console.log({ searchCriteria });
 
   return (
     <Container>
@@ -74,6 +94,32 @@ const App = () => {
         onChange={handleChangeInput}
         value={searchCriteria.q}
       />
+
+      {repositories.length > 0 && (
+        <SelectInputsWrapper>
+          <SelectInputs
+            name='sort'
+            onChange={handleChangeInput}
+            value={searchCriteria.sort}
+            placeholder='Sort by'>
+            <option value=''>Sort by</option>
+            <option value='stars'>Stars</option>
+            <option value='fork'>Forks</option>
+          </SelectInputs>
+          <SelectInputs
+            name='order'
+            onChange={handleChangeInput}
+            value={searchCriteria.order}
+            placeholder='Order by'>
+            <option value=''>Order by</option>
+            <option value='asc'>Ascending</option>
+            <option value='desc'>Descending</option>
+          </SelectInputs>
+          <button type='reset' onClick={handleResetClick}>
+            Reset
+          </button>
+        </SelectInputsWrapper>
+      )}
       <ListingContainer>
         {repositories.map((repository) => (
           <RepoCard key={repository.id}>
@@ -175,4 +221,19 @@ export const NumbersWithIconsWrapper = styled.div`
   display: flex;
   flex-direction: row;
   align-items: end;
+`;
+
+export const SelectInputs = styled.select`
+  width: 23%;
+  height: 40px;
+  border: 1px solid #cccc;
+  margin-right: 10px;
+`;
+
+export const SelectInputsWrapper = styled.div`
+  display: flex;
+  flex-direction: row;
+  margin-top: 20px;
+  width: 100%;
+  justify-content: flex-start;
 `;
