@@ -5,34 +5,18 @@ import './App.css';
 import githubLogo from './assets/svg/iconmonstr-github.svg';
 import axios from 'axios';
 import queryString from 'query-string';
-import StarsIcon from './assets/svg/stars-icon';
-import ForkIcon from './assets/svg/git-fork';
 import InfiniteScroll from 'react-infinite-scroller';
-
+import Select from './components/select';
+import Card from './components/card';
+import { RepositoryResponse } from './types';
 import {
   Container,
   Input,
   SelectInputsWrapper,
-  SelectInputs,
   ListingContainer,
-  RepoCard,
-  RepoName,
-  RepoDescription,
-  IconsWrapper,
-  NumbersWithIconsWrapper,
-  NumbersText,
 } from './styles';
 
 const GITHUB_API_BASE_URL = 'https://api.github.com';
-
-type RepositoryResponse = {
-  id: number;
-  node_id: string;
-  forks: number;
-  stars: number;
-  full_name: string;
-  description: string;
-};
 
 const initialSearchCriteria = {
   order: '',
@@ -46,9 +30,19 @@ const App = () => {
   const [searchCriteria, setSearchCriteria] = useState({
     ...initialSearchCriteria,
   });
+
   const [loading, setLoading] = useState(false);
   const [changingQuery, setChangingQuery] = useState(true);
   const [hasMore, setHasMore] = useState(true);
+  const url = queryString.stringifyUrl({
+    query: {
+      q: searchCriteria.q,
+      order: searchCriteria.order,
+      sort: searchCriteria.sort,
+      page: searchCriteria.page,
+    },
+    url: `${GITHUB_API_BASE_URL}/search/repositories`,
+  });
 
   const handleChangeInput = useCallback(
     (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -64,16 +58,6 @@ const App = () => {
     },
     [setSearchCriteria],
   );
-
-  const url = queryString.stringifyUrl({
-    query: {
-      q: searchCriteria.q,
-      order: searchCriteria.order,
-      sort: searchCriteria.sort,
-      page: searchCriteria.page,
-    },
-    url: `${GITHUB_API_BASE_URL}/search/repositories`,
-  });
 
   const handleChangeCriteria = useCallback(() => {
     setLoading(true);
@@ -113,7 +97,7 @@ const App = () => {
     return response.data.items;
   }, [url]);
 
-  const handleInfiniteOnLoad = async () => {
+  const handleFetchOnLoad = async () => {
     if (searchCriteria.page !== 1) {
       const newRepositories = await fetchReposotiries();
       setRepositories([...repositories, ...newRepositories]);
@@ -126,8 +110,6 @@ const App = () => {
       page: searchCriteria.page + 1,
     });
   };
-
-  console.log(repositories);
 
   return (
     <Container>
@@ -142,34 +124,37 @@ const App = () => {
       />
 
       {loading && <p>Loading...</p>}
+
       {repositories.length > 0 && (
         <>
           <SelectInputsWrapper>
-            <SelectInputs
-              name='sort'
+            <Select
               onChange={handleChangeInput}
               value={searchCriteria.sort}
-              placeholder='Sort by'>
-              <option value=''>Sort by</option>
-              <option value='stars'>Stars</option>
-              <option value='fork'>Forks</option>
-            </SelectInputs>
-            <SelectInputs
-              name='order'
+              name='sort'
+              options={[
+                { name: 'Sort by', value: '' },
+                { name: 'Stars', value: 'stars' },
+                { name: 'Forks', value: 'fork' },
+              ]}
+            />
+            <Select
               onChange={handleChangeInput}
               value={searchCriteria.order}
-              placeholder='Order by'>
-              <option value=''>Order by</option>
-              <option value='asc'>Ascending</option>
-              <option value='desc'>Descending</option>
-            </SelectInputs>
+              name='order'
+              options={[
+                { name: 'Order by', value: '' },
+                { name: 'Ascending', value: 'asc' },
+                { name: 'Descending', value: 'desc' },
+              ]}
+            />
             <button type='reset' onClick={handleResetClick}>
               Reset
             </button>
           </SelectInputsWrapper>
           <InfiniteScroll
             pageStart={0}
-            loadMore={handleInfiniteOnLoad}
+            loadMore={handleFetchOnLoad}
             hasMore={hasMore}
             loader={
               <div className='loader' key={0}>
@@ -178,21 +163,13 @@ const App = () => {
             }>
             <ListingContainer>
               {repositories.map((repository) => (
-                <RepoCard key={repository.id}>
-                  <RepoName>{repository.full_name}</RepoName>
-                  <RepoDescription>{repository.description}</RepoDescription>
-                  <IconsWrapper>
-                    <NumbersWithIconsWrapper>
-                      <StarsIcon />
-                      <NumbersText>
-                        {repository.stars ? repository.stars : 0}
-                      </NumbersText>
-                    </NumbersWithIconsWrapper>
-                    <NumbersWithIconsWrapper>
-                      <ForkIcon /> <NumbersText>{repository.forks}</NumbersText>
-                    </NumbersWithIconsWrapper>
-                  </IconsWrapper>
-                </RepoCard>
+                <Card
+                  id={repository.id}
+                  full_name={repository.full_name}
+                  forks={repository.forks}
+                  stars={repository.stars}
+                  description={repository.description}
+                />
               ))}
             </ListingContainer>
           </InfiniteScroll>
